@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Author: Igor Tsiva
+# Create Date: 5/01/2023
+# Last Update: 25/07/2023
+
+# Description
+# Backup script for ~/imp, also upload backup to google drive
+
+# Usage
+# At first start:
+# creds.json from Google Cloud service account should be inside ./node-backup
+# to work.
+# Then:
+# ./backup_script [ls | get]
+# Create backup if no options provided.
+# ls - shows list of uploaded backups.
+# get - download chosen backup.
+
+imp=/home/star/imp
+backupfolder=$(dirname $0)
+
+if [ "$1" = "ls" ]; then
+	echo "List of backups..."
+	cd $backupfolder/node-backup
+	read -ra arr <<< "$(node ./index.cjs)"
+	for el in "${arr[@]}"; do
+		printf "%s\n" "$el"
+	done
+	cd ..
+	exit 0
+elif [ "$1" = "get" ]; then
+	echo "Select backup..."
+	cd $backupfolder/node-backup
+	read -ra arr <<< "$(node ./index.cjs)"
+	for index in "${!arr[@]}"; do
+		printf "%s\n" "$index) ${arr[$index]}"
+	done
+	echo "Enter index of backup (just number):"
+	read i
+	echo "Downloading backup ${arr[$i]}..."
+	echo $(node ./index.cjs get=${arr[$i]})
+	mkdir -p ../downloaded-backups/
+	mv -f downloaded-backups/* ../downloaded-backups/
+	cd ..
+	echo "$backupfolder/downloaded-backups is dir with backups."
+	exit 0
+fi
+
+echo "/----------------------$(date +%D)-----------------------/" >> "$backupfolder/backup.log"
+echo "User: ${USER^}" >> $backupfolder/backup.log
+echo "Backup $imp" >> $backupfolder/backup.log
+mkdir -p $backupfolder/tmp &>> $backupfolder/backup.log
+size=$(du -sh --apparent-size $imp | cut -f 1)
+echo Size is\: ${size}B >> $backupfolder/backup.log
+echo Creating backup... >> $backupfolder/backup.log
+backupname=backup-"$(date +%d-%m-%Y_%H-%M-%S)".tar.gz
+t1=$(date +%s)
+tar -Pczf $backupfolder/tmp/$backupname $imp &>> $backupfolder/backup.log
+t2=$(date +%s)
+echo "Backuping time: $(($t2 - $t1))s" >> $backupfolder/backup.log
+ressize=$(du -sh --apparent-size $backupfolder/tmp/$backupname | cut -f 1)
+echo "Size of the backup is: ${ressize}B" >> $backupfolder/backup.log
+cd $backupfolder/node-backup
+echo $(node ./index.cjs post=$backupfolder/../tmp/$backupname) &>> $backupfolder/../backup.log
+cd ..
+echo
+echo "Removing temporary files..." >> $backupfolder/backup.log
+rm $backupfolder/tmp/$backupname &>> $backupfolder/backup.log
+echo "Done" >> $backupfolder/backup.log
+
+exit 0
