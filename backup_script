@@ -47,26 +47,25 @@ elif [ "$1" = "get" ]; then
 	exit 0
 fi
 
-echo "/----------------------$(date +%D)-----------------------/" >> "$backupfolder/backup.log"
-echo "User: ${USER^}" >> $backupfolder/backup.log
-echo "Backup $imp" >> $backupfolder/backup.log
-mkdir -p $backupfolder/tmp &>> $backupfolder/backup.log
+echo "/----------------------$(date +%D)-----------------------/"
+echo "User: ${USER^}"
+echo "Backup $imp"
+mkdir -p $backupfolder/tmp
 size=$(du -sh --apparent-size $imp | cut -f 1)
-echo Size is\: ${size}B >> $backupfolder/backup.log
-echo Creating backup... >> $backupfolder/backup.log
+echo Size is\: ${size}B
+echo Creating backup...
 backupname=backup-"$(date +%d-%m-%Y_%H-%M-%S)".tar.gz
 t1=$(date +%s)
-tar -Pczf $backupfolder/tmp/$backupname $imp &>> $backupfolder/backup.log
+tar -Pczf $backupfolder/tmp/$backupname $imp
 t2=$(date +%s)
-echo "Backuping time: $(($t2 - $t1))s" >> $backupfolder/backup.log
+echo "Backuping time: $(($t2 - $t1))s"
 ressize=$(du -sh --apparent-size $backupfolder/tmp/$backupname | cut -f 1)
-echo "Size of the backup is: ${ressize}B" >> $backupfolder/backup.log
+echo "Size of the backup is: ${ressize}B"
 cd $backupfolder/node-backup
-echo $(node ./index.cjs post=$backupfolder/../tmp/$backupname) &>> $backupfolder/../backup.log
+echo $(node ./index.cjs post=$backupfolder/../tmp/$backupname)
 cd ..
 echo
-echo "Removing temporary files..." >> $backupfolder/backup.log
-rm $backupfolder/tmp/$backupname &>> $backupfolder/backup.log
-echo "Done" >> $backupfolder/backup.log
-
+echo "Removing temporary files..."
+rm $backupfolder/tmp/$backupname
+echo "Done"
 exit 0
